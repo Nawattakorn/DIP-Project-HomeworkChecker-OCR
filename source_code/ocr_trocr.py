@@ -15,11 +15,11 @@ processor = TrOCRProcessor.from_pretrained('microsoft/trocr-base-handwritten')
 model = VisionEncoderDecoderModel.from_pretrained('microsoft/trocr-base-handwritten').to(device)
 print(f"โหลดโมเดลสำเร็จ! รันบนอุปกรณ์: {device}")
 
-# ═══ 1. Line Detection Box Finder (สุดยอดเทคนิคหากล่อง) ═════════════════════
+# ═══ 1. Line Detection Box Finder ═════════════════════
 def _preprocess_for_boxes(img_bgr):
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
     gray_blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    # กลับมาใช้ Otsu เพื่อให้เส้นกล่องที่พิมพ์มาคมกริบที่สุด
+    
     _, bw = cv2.threshold(gray_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     return bw
 
