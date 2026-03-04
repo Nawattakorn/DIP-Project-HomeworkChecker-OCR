@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}อัปโหลดการบ้าน{% endblock %}
+{% block content %}
+<div class="card">
+    <h2 style="font-size:1.1rem;margin-bottom:.75rem;">อัปโหลดรูปการบ้าน</h2>
+    <p style="color:var(--muted);font-size:.875rem;margin-bottom:1.25rem;">
+        รองรับ PNG · JPG · JPEG · BMP &nbsp;|&nbsp; ตัวอักษรสีเข้มบนพื้นขาว
+    </p>
+    <form action="{{ url_for('check') }}" method="post" enctype="multipart/form-data">
+        <div style="margin-bottom: 1rem;">
+            <label style="display:block; font-size:.875rem; margin-bottom:.5rem;">1. เลือกไฟล์รูปภาพ</label>
+            <input type="file" name="file" accept=".png,.jpg,.jpeg,.bmp" required style="display:block;width:100%;padding:.5rem;background:var(--bg);
+                      color:var(--text);border:1px solid var(--border);border-radius:6px;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display:block; font-size:.875rem; margin-bottom:.5rem;">2. เลือกระบบตรวจ (Engine)</label>
+            <select name="engine" required style="display:block;width:100%;padding:.5rem;background:var(--bg);
+                       color:var(--text);border:1px solid var(--border);border-radius:6px;">
+                <option value="corr2">Correlation 2D (ตัวเลข)</option>
+                <option value="teserract">Tesseract OCR (ตัวอักษร + ตัวเลข)</option>
+                <option value="trocr">TrOCR (AI - ลายมือ)</option>
+                <option value="compare">⚡ เปรียบเทียบทั้ง 3 Engine</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display:block; font-size:.875rem; margin-bottom:.5rem;">3. กรอกเฉลย (1 ข้อต่อ 1 บรรทัด
+                หรือคั่นด้วยคอมมา)</label>
+            <textarea name="answers_raw" placeholder="เช่น:&#10;7&#10;4&#10;12" rows="6" required style="display:block;width:100%;padding:.75rem;background:var(--bg);
+                         color:var(--text);border:1px solid var(--border);border-radius:6px;
+                         font-family: monospace; resize: vertical;"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">ตรวจการบ้าน →</button>
+    </form>
+
+</div>
+<div class="card">
+    <h3 style="font-size:.95rem;margin-bottom:.5rem;">วิธีใช้</h3>
+    <ul style="color:var(--muted);font-size:.875rem;padding-left:1.2rem;line-height:1.8;">
+        <li>ถ่ายรูปหรือสแกนกระดาษการบ้านให้ชัด</li>
+        <li>ตัวอักษรสีเข้มบนพื้นหลังสีอ่อน ได้ผลดีที่สุด</li>
+        <li>แต่ละช่อง = 1 คำตอบ (ระบบจะอ่านทีละกล่อง)</li>
+    </ul>
+</div>
+{% endblock %}

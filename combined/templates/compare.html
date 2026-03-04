@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+{% block title %}เปรียบเทียบ 3 Engine{% endblock %}
+
+{% block head %}
+<style>
+    .compare-wrap {
+        max-width: 1100px;
+    }
+
+    /* ── Score Banner ── */
+    .score-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .score-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1.25rem 1rem;
+        text-align: center;
+    }
+
+    .score-card .eng-label {
+        font-size: .75rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        margin-bottom: .4rem;
+    }
+
+    .score-card .pct {
+        font-size: 2.4rem;
+        font-weight: 700;
+        color: var(--accent);
+        line-height: 1;
+    }
+
+    .score-card .sub {
+        font-size: .8rem;
+        color: var(--muted);
+        margin-top: .3rem;
+    }
+
+    .score-card.best {
+        border-color: var(--green);
+    }
+
+    .score-card.best .pct {
+        color: var(--green);
+    }
+
+    /* ── Comparison Table ── */
+    .cmp-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .875rem;
+    }
+
+    .cmp-table th {
+        background: var(--bg);
+        color: var(--muted);
+        padding: .6rem .75rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: .8rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .cmp-table td {
+        padding: .6rem .75rem;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+
+    .cmp-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .cmp-table tr:hover td {
+        background: rgba(88, 166, 255, .04);
+    }
+
+    .cell-engine {
+        display: flex;
+        flex-direction: column;
+        gap: .15rem;
+    }
+
+    .got-val {
+        font-family: monospace;
+        font-size: .95rem;
+        font-weight: 600;
+    }
+
+    .ok {
+        color: var(--green);
+    }
+
+    .err {
+        color: var(--red);
+    }
+
+    .agree-all {
+        background: rgba(63, 185, 80, .15);
+        color: var(--green);
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-size: .75rem;
+    }
+
+    .agree-none {
+        background: rgba(248, 81, 73, .12);
+        color: var(--red);
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-size: .75rem;
+    }
+
+    .agree-part {
+        background: rgba(210, 153, 34, .12);
+        color: #d4a017;
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-size: .75rem;
+    }
+
+    /* ── Pipeline Tabs ── */
+    .tab-bar {
+        display: flex;
+        gap: .5rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 1.25rem;
+    }
+
+    .tab-btn {
+        padding: .5rem 1rem;
+        font-size: .875rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        font-family: inherit;
+        transition: color .15s, border-color .15s;
+    }
+
+    .tab-btn:hover {
+        color: var(--text);
+    }
+
+    .tab-btn.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+    }
+
+    .tab-panel {
+        display: none;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    /* ── Pipeline images (copied from result.html) ── */
+    .section-title {
+        font-size: .75rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 1.25rem 0 .6rem;
+    }
+
+    .step-img {
+        max-width: 100%;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        display: block;
+    }
+
+    .roi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .roi-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .roi-header {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        margin-bottom: .75rem;
+    }
+
+    .roi-num {
+        font-size: .8rem;
+        color: var(--muted);
+    }
+
+    .roi-result {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent);
+    }
+
+    .img-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .5rem;
+        margin-bottom: .75rem;
+    }
+
+    .img-label {
+        font-size: .7rem;
+        color: var(--muted);
+        margin-bottom: .2rem;
+    }
+
+    .img-label+img {
+        width: 100%;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+    }
+
+    .char-row {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+        margin-top: .5rem;
+    }
+
+    .char-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: .5rem;
+        text-align: center;
+        min-width: 90px;
+    }
+
+    .char-label {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin: .2rem 0;
+    }
+
+    .char-score {
+        font-size: .65rem;
+        color: var(--muted);
+    }
+
+    .char-imgs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .25rem;
+        margin-top: .4rem;
+    }
+
+    .char-imgs img {
+        width: 100%;
+        border-radius: 3px;
+        border: 1px solid var(--border);
+        image-rendering: pixelated;
+    }
+
+    .top3 {
+        font-size: .6rem;
+        color: var(--muted);
+        margin-top: .3rem;
+        text-align: left;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="compare-wrap" style="width:100%;max-width:1100px;">
+
+    <a href="{{ url_for('index') }}" class="btn btn-secondary" style="margin-bottom:1.25rem;display:inline-block;">←
+        อัปโหลดใหม่</a>
+    <h2 style="font-size:1.1rem;margin-bottom:1rem;">⚡ ผลเปรียบเทียบ 3 Engine</h2>
+
+    {# ── Score Banner ── #}
+    {% set scores = [
+    ('corr2', 'Correlation 2D', results_all.corr2),
+    ('teserract', 'Tesseract OCR', results_all.teserract),
+    ('trocr', 'TrOCR (AI)', results_all.trocr),
+    ] %}
+    {% set max_score = [results_all.corr2.score, results_all.teserract.score, results_all.trocr.score] | max %}
+
+    <div class="score-row">
+        {% for key, label, r in scores %}
+        <div class="score-card {% if r.score == max_score and r.score > 0 %}best{% endif %}">
+            <div class="eng-label">{{ label }}</div>
+            {% if r.success %}
+            <div class="pct">{{ r.score }}%</div>
+            <div class="sub">ถูก {{ r.correct }}/{{ r.total }} ข้อ</div>
+            {% else %}
+            <div class="pct" style="color:var(--red);font-size:1.2rem;">Error</div>
+            <div class="sub" style="color:var(--red);">{{ r.error }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {# ── Comparison Table ── #}
+    {% set r_c = results_all.corr2 %}
+    {% set r_t = results_all.teserract %}
+    {% set r_a = results_all.trocr %}
+    {% if r_c.success or r_t.success or r_a.success %}
+    {% set n = [r_c.results|length, r_t.results|length, r_a.results|length] | max %}
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.25rem;">
+        <table class="cmp-table">
+            <thead>
+                <tr>
+                    <th style="width:45px;">ข้อ</th>
+                    <th>เฉลย</th>
+                    <th>Corr2</th>
+                    <th>Tesseract</th>
+                    <th>TrOCR</th>
+                    <th>ความเห็น</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(n) %}
+                {% set qc = r_c.results[i] if i < r_c.results|length else None %} {% set qt=r_t.results[i] if i <
+                    r_t.results|length else None %} {% set qa=r_a.results[i] if i < r_a.results|length else None %} {%
+                    set expected=(qc or qt or qa).expected %} {% set ok_count=(1 if qc and qc.correct else 0) + (1 if qt
+                    and qt.correct else 0) + (1 if qa and qa.correct else 0) %} <tr>
+                    <td style="color:var(--muted);font-size:.8rem;">{{ i+1 }}</td>
+                    <td><strong>{{ expected }}</strong></td>
+                    <td>{% if qc %}<div class="cell-engine">
+                            <span class="got-val {% if qc.correct %}ok{% else %}err{% endif %}">{{ qc.got or '—'
+                                }}</span>
+                            <span>{% if qc.correct %}✓ ถูก{% else %}✗ ผิด{% endif %}</span>
+                        </div>{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
+                    <td>{% if qt %}<div class="cell-engine">
+                            <span class="got-val {% if qt.correct %}ok{% else %}err{% endif %}">{{ qt.got or '—'
+                                }}</span>
+                            <span>{% if qt.correct %}✓ ถูก{% else %}✗ ผิด{% endif %}</span>
+                        </div>{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
+                    <td>{% if qa %}<div class="cell-engine">
+                            <span class="got-val {% if qa.correct %}ok{% else %}err{% endif %}">{{ qa.got or '—'
+                                }}</span>
+                            <span>{% if qa.correct %}✓ ถูก{% else %}✗ ผิด{% endif %}</span>
+                        </div>{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
+                    <td>
+                        {% if ok_count == 3 %}<span class="agree-all">✓ ทุก engine เห็นตรงกัน</span>
+                        {% elif ok_count == 0 %}<span class="agree-none">✗ ทั้งหมดผิด</span>
+                        {% else %}<span class="agree-part">~ {{ ok_count }}/3 ถูก</span>{% endif %}
+                    </td>
+                    </tr>
+                    {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {# ── Pipeline Tabs ── #}
+    {% if steps_all %}
+    <div class="card">
+        <h3 style="font-size:1rem;margin-bottom:1rem;color:var(--accent)">🔬 Image Processing Pipeline</h3>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('corr2', this)">Correlation 2D</button>
+            <button class="tab-btn" onclick="switchTab('teserract', this)">Tesseract OCR</button>
+            <button class="tab-btn" onclick="switchTab('trocr', this)">TrOCR (AI)</button>
+        </div>
+
+        {% for eng_key, eng_label in [('corr2','Correlation 2D'), ('teserract','Tesseract OCR'), ('trocr','TrOCR (AI)')]
+        %}
+        <div id="tab-{{ eng_key }}" class="tab-panel {% if eng_key == 'corr2' %}active{% endif %}">
+            {% set steps = steps_all[eng_key] %}
+            {% for step in steps %}
+            {% if step.rois is defined %}
+            {# ── ROI step ── #}
+            <div class="section-title">{{ step.title }}</div>
+            <div class="roi-grid">
+                {% for roi in step.rois %}
+                <div class="roi-card">
+                    <div class="roi-header">
+                        <span class="roi-num">กล่องที่ {{ roi.idx }}</span>
+                        <span class="roi-result">{{ roi.ocr or '—' }}</span>
+                    </div>
+                    <div class="img-row">
+                        <div>
+                            <div class="img-label">ROI สี (ดิบ)</div>
+                            <img src="data:image/png;base64,{{ roi.b64_color }}">
+                        </div>
+                        <div>
+                            <div class="img-label">Binary (bw_raw)</div>
+                            <img src="data:image/png;base64,{{ roi.b64_bw }}">
+                        </div>
+                    </div>
+                    {% if roi.chars %}
+                    <div class="img-label" style="margin-bottom:.4rem">bwlabel → imresize 42×24 → corr2</div>
+                    <div class="char-row">
+                        {% for ch in roi.chars %}
+                        <div class="char-card">
+                            <div class="char-label">{{ ch.label }}</div>
+                            <div class="char-score">score: {{ ch.score }}</div>
+                            <div class="char-imgs">
+                                <div>
+                                    <div class="img-label">char</div><img src="data:image/png;base64,{{ ch.b64_char }}">
+                                </div>
+                                <div>
+                                    <div class="img-label">template</div><img
+                                        src="data:image/png;base64,{{ ch.b64_tmpl }}">
+                                </div>
+                            </div>
+                            <div class="top3">top3:<br>{% for d,s in ch.top3 %}'{{ d }}': {{ s }}<br>{% endfor %}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            {# ── Image step ── #}
+            <div class="section-title">{{ step.title }}</div>
+            <img class="step-img" src="data:image/png;base64,{{ step.b64 }}" alt="{{ step.title }}">
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function switchTab(key, btn) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + key).classList.add('active');
+        btn.classList.add('active');
+    }
+</script>
+{% endblock %}
