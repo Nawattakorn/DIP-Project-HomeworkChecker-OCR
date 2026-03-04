@@ -13,14 +13,14 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 def _preprocess_full(img_bgr):
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
     gray_blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    _, bw = cv2.threshold(gray_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    bw_raw = cv2.medianBlur(bw, 3)
-    num, labels, stats, _ = cv2.connectedComponentsWithStats(bw, connectivity=8)
-    bw_clean = np.zeros_like(bw)
+    _, bw_thresh = cv2.threshold(gray_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    bw_raw = cv2.medianBlur(bw_thresh, 3)          # ← เวอร์ชันปัจจุบัน (มี medianBlur)
+    num, labels, stats, _ = cv2.connectedComponentsWithStats(bw_thresh, connectivity=8)
+    bw_clean = np.zeros_like(bw_thresh)
     for i in range(1, num):
         if stats[i, cv2.CC_STAT_AREA] >= 300:
             bw_clean[labels == i] = 255
-    return bw_clean, bw_raw
+    return bw_clean, bw_raw, bw_thresh              # bw_thresh = ก่อน medianBlur
 
 def _find_boxes(img_bgr, img_shape):
     """
@@ -69,7 +69,7 @@ def _find_boxes(img_bgr, img_shape):
 def extract_answers(image_path: str) -> list:
     img = cv2.imread(image_path)
     if img is None: raise ValueError(f"Cannot read: {image_path}")
-    _, bw_raw = _preprocess_full(img)
+    _, bw_raw, _ = _preprocess_full(img)
     boxes, _ = _find_boxes(img, img.shape)
     h_img, w_img = img.shape[:2]
 
@@ -107,7 +107,7 @@ def extract_answers_debug(image_path: str):
     img = cv2.imread(image_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, bw_otsu = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    bw_clean, bw_raw = _preprocess_full(img)
+    bw_clean, bw_raw, bw_thresh = _preprocess_full(img)
     boxes, box_mask = _find_boxes(img, img.shape)
     h_img, w_img = img.shape[:2]
 
@@ -116,11 +116,13 @@ def extract_answers_debug(image_path: str):
         cv2.rectangle(box_vis, (x, y), (x+w, y+h), (0, 220, 100), 3)
 
     pipeline = [
-        {"title": "1. Original",                           "b64": to_b64(img)},
-        {"title": "2. Grayscale",                          "b64": to_b64(gray)},
-        {"title": "3. Otsu Threshold + Invert",            "b64": to_b64(bw_otsu)},
-        {"title": "4. Morphological Line Detection (เส้นกรอบ)", "b64": to_b64(box_mask)},
-        {"title": f"5. Detected Boxes ({len(boxes)} กล่อง)", "b64": to_b64(box_vis)},
+        {"title": "1. Original",                                       "b64": to_b64(img)},
+        {"title": "2. Grayscale",                                      "b64": to_b64(gray)},
+        {"title": "3. Otsu Threshold + Invert",                        "b64": to_b64(bw_otsu)},
+        {"title": "4a. _Preprocess_full: ก่อน MedianBlur (bw_thresh)", "b64": to_b64(bw_thresh)},
+        {"title": "4b. _Preprocess_full: หลัง MedianBlur (bw_raw)",   "b64": to_b64(bw_raw)},
+        {"title": "5. Morphological Line Detection (เส้นกรอบ)",        "b64": to_b64(box_mask)},
+        {"title": f"6. Detected Boxes ({len(boxes)} กล่อง)",           "b64": to_b64(box_vis)},
     ]
 
     answers, roi_debug = [], []
